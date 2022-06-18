@@ -1,3 +1,5 @@
+from collections import defaultdict
+import numpy as np
 from tqdm.auto import tqdm
 
 from datastruct import AdvancedVocab
@@ -104,7 +106,7 @@ def extract_paths(dmatrix):
 
 # finished_paths[2][0][-1]
 # vocabs[1].nocaps2index["της"]
-def resplit_with_refs(path):
+def resplit_with_refs(path, mt_words):
     all_splits = []
     for (frag_dist, b, e, segs) in path:
         # print(f"{b} -> {e}, dist={frag_dist}, {len(segs)} variants", mt_words[b:e])
@@ -141,10 +143,10 @@ def resplit_with_refs(path):
     # return grouped_splits
 
 
-def resplit_paths(paths):
+def resplit_paths(paths, mt_words):
     all_splits = []
     for path in paths:
-        path_splits = resplit_with_refs(path)
+        path_splits = resplit_with_refs(path, mt_words)
         all_splits.extend(path_splits)
     grouped_splits = defaultdict(set)
     for spl in set(all_splits):
