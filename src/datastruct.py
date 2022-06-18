@@ -3,6 +3,7 @@ from collections import Counter
 from sklearn.neighbors import BallTree
 import numpy as np
 from dataclasses import dataclass
+
 from common import remove_cap
 from common import align, AlignmentResult
 
@@ -30,6 +31,7 @@ def word2tokens(word):
     tokens.append(CharToken(word[-1], eow=True))
     return tokens
 
+
 def tokens2words(tokens):
     words = []
     word = []
@@ -45,6 +47,7 @@ def tokens2words(tokens):
     if len(word) > 0:
         words.append("".join(word))
     return words
+
 
 def split_by_word(tokens1, tokens2, verbose=False):
     pairs = []
@@ -70,6 +73,7 @@ def split_by_word(tokens1, tokens2, verbose=False):
     if len(pairs) > 0:
         all_pairs.append(pairs)
     return all_pairs
+
 
 def align_spaces(mt_tokens, ref_tokens):
     word = []
