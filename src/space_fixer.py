@@ -5,7 +5,7 @@ from tqdm.auto import tqdm
 from datastruct import AdvancedVocab
 from datastruct import Word
 from datastruct import align_spaces
-
+from common import sliding_window
 
 def get_closest_data(mt_word, vocabs):
     closest_data = []
@@ -57,7 +57,7 @@ def build_path_matrix(mt_words, vocabs, verbose=False):
             min_dist = dmatrix[i][0] + 0
             # candidates.append()
             result = mt_word.distance_to(mt_word)
-            data = [((0, i, i + 1), (result, -1, mt_word))]
+            data = [((0, i, i + 1), [(result, -1, mt_word)])]
 
         # print(min_dist)
         dmatrix.append((min_dist, data))
@@ -169,7 +169,7 @@ class SpaceFixer:
     def __init__(self, max_words=4, verbose=False):
         self.max_words = max_words
         self.vocabs = {
-            n: AdvancedVocab()
+            int(n): AdvancedVocab()
             for n in np.arange(max_words) + 1
         }
         self.verbose = verbose
@@ -177,19 +177,19 @@ class SpaceFixer:
     def fill(self, sequences):
         for sequence in tqdm(sequences):
             words = [word for word in sequence if len(word) > 0]
-            for k in self.vocabs:
-                for word_seq in sliding_window(words, k):
+            for n in self.vocabs:
+                for word_seq in sliding_window(words, n):
                     # print(word_seq)
                     self.vocabs[n].append(word_seq)
         if self.verbose:
             print("Precompute search trees in vocabs")
-        for n in vocabs:
-            vocabs[n].precompute()
+        for n in self.vocabs:
+            self.vocabs[n].precompute()
 
     def resplit(self, sequence):
-        dmatrix = build_path_matrix(mt_words, vocabs)
+        dmatrix = build_path_matrix(sequence, self.vocabs)
         finished_paths = extract_paths(dmatrix)
-        resplit_dict = resplit_paths(finished_paths)
+        resplit_dict = resplit_paths(finished_paths, sequence)
         for k, v in resplit_dict.items():
             # variant = " ".join(k)
             yield k, v 
