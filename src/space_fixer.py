@@ -24,7 +24,7 @@ def get_closest_data(mt_word, vocabs):
     return min_distance, closest_data
 
 
-def build_path_matrix(mt_words, vocabs, verbose=False):
+def build_path_matrix(mt_words, vocabs, max_split_size=4, verbose=False):
     N = len(mt_words)
     dmatrix = []  # defaultdict(list)
     dmatrix.append((0, []))  # at the beginning the edit distance is zero
@@ -37,7 +37,7 @@ def build_path_matrix(mt_words, vocabs, verbose=False):
             print(i, "last word")
         e = i+1
         candidates = []
-        for nwords in range(1, 5):
+        for nwords in range(1, max_split_size + 1):
             b = e - nwords
             if b < 0:
                 continue
@@ -106,9 +106,13 @@ def extract_paths(dmatrix):
 
 # finished_paths[2][0][-1]
 # vocabs[1].nocaps2index["της"]
-def resplit_with_refs(path, mt_words):
+def resplit_with_refs(path, mt_words, return_spaces=False):
     all_splits = []
+    space_positions = []
+    # bsp = mt_spaces[0]
+    # all_splits = [(bsp, bsp)] # don't replace space with anything
     for (frag_dist, b, e, segs) in path:
+        space_positions.append(e)
         # print(f"{b} -> {e}, dist={frag_dist}, {len(segs)} variants", mt_words[b:e])
         mt_fragment = Word(mt_words[b:e])
         corrected_fragments = set()
@@ -132,6 +136,8 @@ def resplit_with_refs(path, mt_words):
                     new_splits.append(prefix + frag)
                     # print(len(new_splits[0]), new_splits[0])
         all_splits = new_splits
+    if return_spaces:
+        return all_splits, tuple(space_positions)
     return all_splits
     # # print("splits:")
     # grouped_splits = defaultdict(set)
@@ -143,18 +149,25 @@ def resplit_with_refs(path, mt_words):
     # return grouped_splits
 
 
-def resplit_paths(paths, mt_words):
-    all_splits = []
+def resplit_paths(paths, mt_words, mt_spaces):
+    all_splits = dict()
     for path in paths:
-        path_splits = resplit_with_refs(path, mt_words)
-        all_splits.extend(path_splits)
+        path_splits, space_positions = resplit_with_refs(path, mt_words, return_spaces=True)
+        # print(path_splits)
+        for path_split in path_splits:
+            all_splits[path_split] = space_positions
     grouped_splits = defaultdict(set)
-    for spl in set(all_splits):
+    spaces_dict = dict()
+    for spl, space_positions in all_splits.items():
         word_split, refs = list(zip(*spl))
+        spaces_after = [mt_spaces.get(s, " ") for s in space_positions]
+        #word_split =  + [w + space for w, space in zip(word_split, spaces_after)]
+        #word_split = tuple(word_split)
         grouped_splits[word_split].add(refs)
+        spaces_dict[word_split] = spaces_after
 
     grouped_splits = {k: [tuple(set(w)) for w in list(zip(*list(v)))] for k, v in grouped_splits.items()}
-    return grouped_splits
+    return grouped_splits, spaces_dict
 
 
 
@@ -186,12 +199,12 @@ class SpaceFixer:
         for n in self.vocabs:
             self.vocabs[n].precompute()
 
-    def resplit(self, sequence):
-        dmatrix = build_path_matrix(sequence, self.vocabs)
+    def resplit(self, sequence, spaces=dict(), max_split_size=4):
+        dmatrix = build_path_matrix(sequence, self.vocabs, max_split_size=max_split_size)
         finished_paths = extract_paths(dmatrix)
-        resplit_dict = resplit_paths(finished_paths, sequence)
+        resplit_dict, spaces_dict = resplit_paths(finished_paths, sequence, spaces)
         for k, v in resplit_dict.items():
             # variant = " ".join(k)
-            yield k, v 
+            yield k, v, spaces_dict[k]
 
     
