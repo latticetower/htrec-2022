@@ -10,4 +10,4 @@ def compute_metrics(human_translations, system_translations, candidate_translati
   print(f"Candidate CER: {cer_values.mean()}")
   # Computing the character error *reduction* rate (CERR)
   cer_ht_st = compute_cer_values(human_translations, system_translations)
-  print(f"Candidate CERR: {(cer_values - cer_ht_st).mean()}")
+  print(f"Candidate CERR: {(cer_ht_st - cer_values).mean()}")
