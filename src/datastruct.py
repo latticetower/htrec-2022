@@ -251,7 +251,7 @@ class AdvancedVocab:
                 indices.append(word_index)
         return indices
 
-    def find_nearby(self, query_str, max_rad=10, verbose=True):
+    def find_nearby(self, query_str, max_rad=10, use_exact_rad=False, threshold=0.4, verbose=True):
         #if isinstance(query_str, str) or isinstance(query_str, tuple):
         word = Word(query_str)
         #else:
@@ -259,7 +259,11 @@ class AdvancedVocab:
         
         query_vector = self.bow2vector(word.bow)  # , self.letter2index, self.n_letters)
         d_max = query_vector.sum()
-        rad = min(max(int(d_max*0.4), 1), max_rad)
+        if use_exact_rad:
+            rad = max_rad
+        else:
+            rad = min(max(int(d_max*threshold), 1), max_rad)
+
         if verbose:
             print("radius used:", rad)
         indices, distances = self.search_tree.query_radius(
@@ -277,4 +281,15 @@ class AdvancedVocab:
             # all_results.append(result)
             return result
         # return all_results
+    def find_closest(self, query_str):
+        word = Word(query_str)
+        query_vector = self.bow2vector(word.bow)
+        distances, indices = self.search_tree.query(query_vector.reshape(1, -1))
+        # print(indices, distances)
+        rad = np.min(distances)
+        return self.find_nearby(
+            query_str,
+            max_rad=rad,
+            use_exact_rad=True,
+            verbose=False)
         

@@ -21,6 +21,16 @@ def get_closest_data(mt_word, vocabs):
                 closest_data = []
             if result.distance == min_distance:
                 closest_data.append((result, k, word))
+        else:
+            # print(mt_words[2])
+            for word, dist in vocabs[k].find_closest(mt_word.sequence):
+                result = mt_word.distance_to(word)
+                if result.distance < min_distance:
+                    min_distance = result.distance
+                closest_data = []
+                if result.distance == min_distance:
+                    closest_data.append((result, k, word))
+
     return min_distance, closest_data
 
 
