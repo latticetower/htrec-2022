@@ -56,6 +56,11 @@ class AlignmentResult:
         edits = list(zip(xs, ys, matches))
         edits.reverse()
         return edits
+    def __str__(self):
+        return f"AlignmentResult distance={self.distance}, x={self.x}, y={self.y}"
+
+    def __repr__(self):
+        return str(self)
 
 
 def align(x, y, match_cost=1, gap_cost=-1, mismatch_cost=-np.inf, decision_func=max):

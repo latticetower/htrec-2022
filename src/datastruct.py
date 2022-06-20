@@ -149,6 +149,9 @@ class Word:
     def __str__(self):
         return f"{self.sequence}, {self.no_caps}"
 
+    def __repr__(self):
+        return str(self)
+
     def __eq__(self, other):
         if len(self.sequence) != len(other.sequence):
             return False
@@ -251,7 +254,7 @@ class AdvancedVocab:
                 indices.append(word_index)
         return indices
 
-    def find_nearby(self, query_str, max_rad=10, use_exact_rad=False, threshold=0.4, verbose=True):
+    def find_nearby(self, query_str, max_rad=10, use_exact_rad=False, threshold=0.4, verbose=False):
         #if isinstance(query_str, str) or isinstance(query_str, tuple):
         word = Word(query_str)
         #else:
@@ -265,7 +268,7 @@ class AdvancedVocab:
             rad = min(max(int(d_max*threshold), 1), max_rad)
 
         if verbose:
-            print("radius used:", rad)
+            print("nearby radius used:", rad)
         indices, distances = self.search_tree.query_radius(
             query_vector.reshape(1, -1),
             r=rad,
@@ -278,18 +281,21 @@ class AdvancedVocab:
         # all_results = []
         for ind, dist in zip(indices, distances):
             result = [(self.words[word_index], d) for i, d in zip(ind, dist) for word_index in self.index2seq[i]]
+            # print([(str(w), d)for w, d in result])
             # all_results.append(result)
             return result
         # return all_results
-    def find_closest(self, query_str):
+
+    def find_closest(self, query_str, verbose=False):
         word = Word(query_str)
         query_vector = self.bow2vector(word.bow)
         distances, indices = self.search_tree.query(query_vector.reshape(1, -1))
         # print(indices, distances)
         rad = np.min(distances)
+        # print("find closest", query_str, rad, word)
         return self.find_nearby(
             query_str,
             max_rad=rad,
             use_exact_rad=True,
-            verbose=False)
+            verbose=verbose)
         

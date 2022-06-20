@@ -11,6 +11,7 @@ def get_closest_data(mt_word, vocabs):
     closest_data = []
     min_distance = np.inf
     for k in vocabs:
+        # print("vocab", k, mt_word)
         for word, dist in vocabs[k].find_nearby(mt_word.sequence, max_rad=10, verbose=False):
             # print(word, dist)
             result = mt_word.distance_to(word)
@@ -21,15 +22,15 @@ def get_closest_data(mt_word, vocabs):
                 closest_data = []
             if result.distance == min_distance:
                 closest_data.append((result, k, word))
-        else:
+        if k == 1:
             # print(mt_words[2])
             for word, dist in vocabs[k].find_closest(mt_word.sequence):
                 result = mt_word.distance_to(word)
-                if result.distance < min_distance:
-                    min_distance = result.distance
-                closest_data = []
-                if result.distance == min_distance:
-                    closest_data.append((result, k, word))
+                # if result.distance < min_distance:
+                #     min_distance = result.distance
+                # closest_data = []
+                # if result.distance == min_distance:
+                closest_data.append((result, k, word))
 
     return min_distance, closest_data
 
@@ -54,6 +55,8 @@ def build_path_matrix(mt_words, vocabs, max_split_size=4, verbose=False):
             # print(b, e, dmatrix[b])
             mt_word = Word(mt_words[b:e])
             dist, closest_data = get_closest_data(mt_word, vocabs)
+            if verbose:
+                print(dist, closest_data)
             if dist < np.inf:    
                 candidates.append((dmatrix[b][0] + dist, (dist, b, e), closest_data))
             # print(dist)
@@ -62,6 +65,7 @@ def build_path_matrix(mt_words, vocabs, max_split_size=4, verbose=False):
             min_dist = min([d for d, x, cd in candidates])
             data = [(x, cd) for d, x, cd in candidates if d == min_dist]
         else:
+            # TODO: use the word as it is also with distance equal to the minimal one.
             # use last word as it is
             # min_dist = 0
             min_dist = dmatrix[i][0] + 0
@@ -221,8 +225,8 @@ class SpaceFixer:
             self.vocabs[n].precompute()
 
     def resplit(self, sequence, spaces=dict(), max_split_size=4):
-        dmatrix = build_path_matrix(sequence, self.vocabs, max_split_size=max_split_size)
-        finished_paths = extract_paths(dmatrix)
+        self.dmatrix = build_path_matrix(sequence, self.vocabs, max_split_size=max_split_size)
+        finished_paths = extract_paths(self.dmatrix)
         resplit_dict, spaces_dict = resplit_paths(finished_paths, sequence, spaces)
         for k, v in resplit_dict.items():
             # variant = " ".join(k)
