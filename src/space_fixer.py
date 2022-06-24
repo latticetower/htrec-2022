@@ -7,10 +7,12 @@ from datastruct import Word
 from datastruct import align_spaces
 from common import sliding_window
 
-def get_closest_data(mt_word, vocabs):
+def get_closest_data(mt_word, vocabs, vocabs_used=None):
     closest_data = []
     min_distance = np.inf
-    for k in vocabs:
+    if vocabs_used is None:
+        vocabs_used = list(vocabs)
+    for k in vocabs_used:
         # print("vocab", k, mt_word)
         for word, dist in vocabs[k].find_nearby(mt_word.sequence, max_rad=10, verbose=False):
             # print(word, dist)
@@ -77,6 +79,70 @@ def build_path_matrix(mt_words, vocabs, max_split_size=4, verbose=False):
         dmatrix.append((min_dist, data))
     return dmatrix
 
+def build_split_matrix(mt_words, vocabs, max_split_size=1, verbose=False, cutoff=2, equal_length=True):
+    N = len(mt_words)
+    dmatrix = []
+    for i in range(N):
+        dmatrix.append(mt_words[i])
+        # at the beginning the edit distance is zero
+    # b = 0
+    # e = 1
+    vocabs_used = [i for i in vocabs if i > 1]
+
+    # ht_words, mt_words, mt_word.sequence
+    for i in range(N):
+        if verbose:
+            print(i, "last word")
+        # candidates = []
+        for i, word in enumerate(mt_words):
+            mt_word = Word(word)
+            
+            dist, closest_data = get_closest_data(mt_word, vocabs, vocabs_used=vocabs_used)
+            if equal_length:
+                closest_data = [(ar, k, w) for ar, k, w in closest_data if len(w) == len(mt_word)]
+            if len(word) >= cutoff * 3:
+                closest_data = [(ar, k, w) for ar, k, w in closest_data if ar.distance <= cutoff]
+            else:
+                closest_data = [(ar, k, w) for ar, k, w in closest_data if ar.distance <= 0]
+            if verbose:
+                print(dist, closest_data)
+            if dist <= np.inf:
+                # callable(obj)
+                if len(closest_data) > 0:
+                    dmatrix[i] = closest_data
+        # for nwords in range(1, max_split_size + 1):
+        #    b = e - nwords
+        #    if b < 0:
+        #        continue
+        #    # print(b, e, dmatrix[b])
+        #    mt_word = Word(mt_words[b:e])
+        #    dist, closest_data = get_closest_data(mt_word, vocabs)
+        #    if verbose:
+        #        print(dist, closest_data)
+        #    if dist < np.inf:    
+        #        candidates.append((dmatrix[b][0] + dist, (dist, b, e), closest_data))
+        #    # print(dist)
+        # print([c[:2] for c in candidates])
+        # if len(candidates) > 0:
+        #     min_dist = min([d for d, x, cd in candidates])
+        #     data = [(x, cd) for d, x, cd in candidates if d == min_dist]
+        # else:
+        #     # TODO: use the word as it is also with distance equal to the minimal one.
+        #     # use last word as it is
+        #     # min_dist = 0
+        #     min_dist = dmatrix[i][0] + 0
+        #     # candidates.append()
+        #     result = mt_word.distance_to(mt_word)
+        #     data = [((0, i, i + 1), [(result, -1, mt_word)])]
+        # if len(candidates) > 0:
+        #     data = [(x, cd) for d, x, cd in candidates]
+
+        #     # print(min_dist)
+        #     dmatrix.append((0, data))
+        # else:
+        #     dmatrix.append((0, []))
+    return dmatrix
+
 
 
 # using dmatrix we build graph and find all paths from last to first words
@@ -108,6 +174,30 @@ def extract_paths(dmatrix):
         # break
     return finished_paths
 
+# finished_paths = extract_paths(dmatrix)
+
+# using dmatrix we build graph and find all paths from last to first words
+# dmatrix[-1]
+def extract_splitted_paths(dmatrix):
+    n = len(dmatrix)
+    all_prefixes = []
+    for i in range(n):
+        temp_prefixes = []
+        # if dmatrix[i+1]
+        word = dmatrix[i]
+        if isinstance(word, str):
+            if len(all_prefixes) == 0:
+                temp_prefixes = [[word]]
+            else:
+                temp_prefixes = [a + [word] for a in all_prefixes]
+        else:
+            for alignment_result, distance, vocab_word in dmatrix[i]:
+                if len(all_prefixes) == 0:
+                    temp_prefixes.append([(alignment_result, vocab_word)])
+                else:
+                    temp_prefixes.extend([a + [(alignment_result, vocab_word)] for a in all_prefixes])
+        all_prefixes = temp_prefixes
+    return all_prefixes
 # finished_paths = extract_paths(dmatrix)
 
 
@@ -195,6 +285,73 @@ def resplit_paths(paths, mt_words, mt_spaces):
     return grouped_splits, spaces_dict
 
 
+def resplit_splitted_paths(paths, mt_words, mt_spaces):
+    all_splits = defaultdict(set)
+    spaces_dict = dict()
+    # print(mt_spaces)
+    for path in paths:
+        spaces_after = []
+        # print("path", path)
+        fixed_words = []
+        replacements = []
+        for i, replacement_word in enumerate(path):
+            # print(i, replacement_word)
+            if isinstance(replacement_word, str):
+                # not changed
+                fixed_words.append(replacement_word)
+                replacements.append(replacement_word)
+            else:
+                (alignment_result, vocab_word) = replacement_word
+                # print("alignment_result", alignment_result)
+                
+                alignment = alignment_result.do_backtracing(mt_words[i], vocab_word.tokens)
+                mt, rt, m = list(zip(*alignment))
+                # print(mt, rt)
+                corrected_words = tuple([
+                    ("".join(word), "".join([x.char for x in ref]))
+                    for word, ref in align_spaces(mt, rt)])
+                # corrected_words = [(w, ref) for w, ref in corrected_words if len(w) > 0 ]
+                # spaces_after.extend([" "]*(len(corrected_words) - 1))
+                n_words = 0
+                new_word = []
+                ref_word = []
+                for w, ref in corrected_words:
+                    new_word.append(w)
+                    ref_word.append(ref)
+                    if len(w) > 0:
+                        # spaces_after.append(" ")
+                        n_words += 1
+                new_word = tuple(new_word)
+                ref_word = tuple(ref_word)
+                fixed_words.append(new_word)
+                replacements.append(ref_word)
+                # spaces_after = spaces_after[:-1]
+                #if n_words > 0:
+                #    spaces_after.extend([" "]*(n_words - 1))
+            sp_after = mt_spaces.get(i + 1, '')
+            spaces_after.append(sp_after)
+        fixed_words = tuple(fixed_words)
+        spaces_dict[fixed_words] = spaces_after
+        all_splits[fixed_words].add(tuple(replacements))
+
+    # grouped_splits = defaultdict(set)
+    # spaces_dict = dict()
+    # for spl, space_positions in all_splits.items():
+    #     word_split, refs = list(zip(*spl))
+    #     # print(word_split, space_positions)
+    #     # spaces_after = [mt_spaces.get(s, " ") for s in space_positions]
+    #     #word_split =  + [w + space for w, space in zip(word_split, spaces_after)]
+    #     #word_split = tuple(word_split)
+    #     grouped_splits[word_split].add(refs)
+    #     spaces_dict[word_split] = spaces_after
+
+    grouped_splits = {
+        k: [tuple(set(w)) for w in list(zip(*list(vs)))] 
+        for k, vs in all_splits.items()
+    }
+    return grouped_splits, spaces_dict
+
+
 
 # dmatrix = build_path_matrix(mt_words, vocabs)
 # finished_paths = extract_paths(dmatrix)
@@ -232,5 +389,22 @@ class SpaceFixer:
             # variant = " ".join(k)
             assert len(k) == len(spaces_dict[k])
             yield k, v, spaces_dict[k]
+
+    def split_words(self, sequence, spaces=dict(), max_split_size=4, cutoff=2, verbose=False):
+        """ Returns: tuples of [words], [replacement lists], spaces after each word
+        """
+        self.split_matrix = build_split_matrix(sequence, self.vocabs, max_split_size=max_split_size, cutoff=cutoff)
+        finished_paths = extract_splitted_paths(self.split_matrix)
+        if verbose:
+            print("finished_paths", finished_paths)
+            print("sequence", sequence)
+            print("spaces", spaces)
+        resplit_dict, spaces_dict = resplit_splitted_paths(finished_paths, sequence, spaces)
+        for k, v in resplit_dict.items():
+            # variant = " ".join(k)
+            # print("resplit", k, v, spaces, sequence, spaces_dict[k])
+            assert len(k) == len(spaces_dict[k])
+            yield k, v, spaces_dict[k]
+
 
     

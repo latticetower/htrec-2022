@@ -134,7 +134,7 @@ class BasicVocab:
 class Word:
     def __init__(self, sequence):
         self.sequence = sequence  # sequence of words (word1, word2, word3)
-        self.seq_no_caps = [remove_cap(w) for w in sequence]
+        self.seq_no_caps = [remove_cap(w).lower() for w in sequence]
         self.no_caps = "".join(self.seq_no_caps)
 
     def distance_to(self, other):
@@ -145,6 +145,8 @@ class Word:
             decision_func=min
         )
         return alignment_result
+    def __len__(self):
+        return len(self.no_caps)
 
     def __str__(self):
         return f"{self.sequence}, {self.no_caps}"

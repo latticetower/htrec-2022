@@ -2,13 +2,16 @@
 # from lm.markov.models import LM
 from lm.markov.models import LM
 
-def lm_score(text, replacements, lm=None):
+def lm_score(text, replacements, lm=None, return_corrected=False):
     texts = [text]
     scores = [lm.cross_entropy(text)]
     for the_candidate in replacements:
         texts.append(the_candidate)
         scores.append(lm.cross_entropy(the_candidate))
-    return texts[scores.index(min(scores))]
+    best_index = scores.index(min(scores))
+    if return_corrected:
+        return texts[best_index], best_index > 0
+    return texts[best_index]
     
 
 def lmr(text, word=" ς ", replacements=["ς ", " "], lm=None):
