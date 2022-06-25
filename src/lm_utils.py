@@ -14,7 +14,7 @@ def lm_score(text, replacements, lm=None, return_corrected=False):
     return texts[best_index]
     
 
-def lmr(text, word=" ς ", replacements=["ς ", " "], lm=None):
+def lmr(text, word=" ς ", replacements=["ς ", " ", " σ ", " σ"], lm=None):
     scores = []
     for the_candidate in replacements:
         scores.append(lm.cross_entropy(text.replace(word, the_candidate)))

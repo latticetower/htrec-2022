@@ -37,7 +37,7 @@ def get_closest_data(mt_word, vocabs, vocabs_used=None):
     return min_distance, closest_data
 
 
-def build_path_matrix(mt_words, vocabs, max_split_size=4, verbose=False):
+def build_path_matrix(mt_words, vocabs, max_split_size=4, cutoff=None, equal_length=False, verbose=False):
     N = len(mt_words)
     dmatrix = []  # defaultdict(list)
     dmatrix.append((0, []))  # at the beginning the edit distance is zero
@@ -57,9 +57,11 @@ def build_path_matrix(mt_words, vocabs, max_split_size=4, verbose=False):
             # print(b, e, dmatrix[b])
             mt_word = Word(mt_words[b:e])
             dist, closest_data = get_closest_data(mt_word, vocabs)
+            if equal_length:
+                closest_data = [(ar, k, w) for ar, k, w in closest_data if len(w) == len(mt_word)]
             if verbose:
                 print(dist, closest_data)
-            if dist < np.inf:    
+            if dist < np.inf and len(closest_data) > 0:    
                 candidates.append((dmatrix[b][0] + dist, (dist, b, e), closest_data))
             # print(dist)
         # print([c[:2] for c in candidates])
@@ -381,8 +383,9 @@ class SpaceFixer:
         for n in self.vocabs:
             self.vocabs[n].precompute()
 
-    def resplit(self, sequence, spaces=dict(), max_split_size=4):
-        self.dmatrix = build_path_matrix(sequence, self.vocabs, max_split_size=max_split_size)
+    def resplit(self, sequence, spaces=dict(), max_split_size=4, cutoff=None):
+        self.dmatrix = build_path_matrix(sequence, self.vocabs, max_split_size=max_split_size, equal_length=True)
+        # return
         finished_paths = extract_paths(self.dmatrix)
         resplit_dict, spaces_dict = resplit_paths(finished_paths, sequence, spaces)
         for k, v in resplit_dict.items():
