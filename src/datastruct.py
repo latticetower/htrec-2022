@@ -190,6 +190,11 @@ class AdvancedVocab:
         self.letter2index = dict()
         self.search_tree = None
 
+    def get_words(self, n):
+        for w in self.words:
+            if len(w) == n:
+                yield w
+
     def append(self, word_seq):
         word_seq = tuple(word_seq)
         if word_seq in self.word2index:
