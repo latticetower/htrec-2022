@@ -16,10 +16,15 @@ backtrace_symbols = {
     DIAG: "\u2196"
 }
 
+
 def _remove_cap(char):
     return unicodedata.normalize("NFC", unicodedata.normalize("NFD", char)[:1])
 def remove_cap(s):
     return "".join([_remove_cap(char) for char in s])
+
+VOWELS = set(["α", "ε", "η" "ι", "ο", "υ", "ω"])
+def is_vowel(ch):
+    return _remove_cap(ch) in VOWELS
 
 
 @dataclass
@@ -105,3 +110,29 @@ def sliding_window(iterable, n):
     for x in it:
         window.append(x)
         yield tuple(window)
+
+
+def separate_sequences(structure):
+    prefixes = []
+    for item in structure:
+        new_prefixes = []
+        if isinstance(item, list):
+            if len(prefixes) == 0:
+                for it in item:
+                    if not isinstance(it, list):
+                        it = [it]
+                    new_prefixes.append(it)
+            else:
+                for it in item:
+                    if not isinstance(it, list):
+                        it = [it]
+                    for p in prefixes:
+                        new_prefixes.append(p + it)
+        else:
+            if len(prefixes) == 0:
+                new_prefixes.append([item])
+            else:
+                for p in prefixes:
+                    new_prefixes.append(p + [item])
+        prefixes = new_prefixes
+    return prefixes

@@ -194,6 +194,9 @@ class AdvancedVocab:
         for w in self.words:
             if len(w) == n:
                 yield w
+    def __iter__(self):
+        for w in self.words:
+            yield w
 
     def append(self, word_seq):
         word_seq = tuple(word_seq)
@@ -293,12 +296,17 @@ class AdvancedVocab:
             return result
         # return all_results
 
-    def find_closest(self, query_str, verbose=False):
-        word = Word(query_str)
+    def find_closest(self, query_str, distance_only=False, verbose=False):
+        if isinstance(query_str, Word):
+            word = query_str
+        else:
+            word = Word(query_str)
         query_vector = self.bow2vector(word.bow)
         distances, indices = self.search_tree.query(query_vector.reshape(1, -1))
         # print(indices, distances)
         rad = np.min(distances)
+        if distance_only:
+            return rad
         # print("find closest", query_str, rad, word)
         return self.find_nearby(
             query_str,
