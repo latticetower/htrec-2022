@@ -74,6 +74,7 @@ def build_path_matrix(mt_words, vocabs, max_split_size=4, cutoff=None, equal_len
             # min_dist = 0
             min_dist = dmatrix[i][0] + 0
             # candidates.append()
+            mt_word = Word(mt_words[i:i+1])
             result = mt_word.distance_to(mt_word)
             data = [((0, i, i + 1), [(result, -1, mt_word)])]
 
@@ -275,6 +276,7 @@ def resplit_paths(paths, mt_words, mt_spaces):
     grouped_splits = defaultdict(set)
     spaces_dict = dict()
     for spl, space_positions in all_splits.items():
+        # print(spl, space_positions)
         word_split, refs = list(zip(*spl))
         # print(word_split, space_positions)
         spaces_after = [mt_spaces.get(s, " ") for s in space_positions]
