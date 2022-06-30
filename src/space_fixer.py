@@ -298,6 +298,9 @@ def resplit_splitted_paths(paths, mt_words, mt_spaces):
         replacements = []
         for i, replacement_word in enumerate(path):
             # print(i, replacement_word)
+            n_words = 0
+            new_word = []
+            ref_word = []
             if isinstance(replacement_word, str):
                 # not changed
                 fixed_words.append(replacement_word)
@@ -314,24 +317,25 @@ def resplit_splitted_paths(paths, mt_words, mt_spaces):
                     for word, ref in align_spaces(mt, rt)])
                 # corrected_words = [(w, ref) for w, ref in corrected_words if len(w) > 0 ]
                 # spaces_after.extend([" "]*(len(corrected_words) - 1))
-                n_words = 0
-                new_word = []
-                ref_word = []
+                
                 for w, ref in corrected_words:
-                    new_word.append(w)
-                    ref_word.append(ref)
+                    if len(w) > 0:
+                        new_word.append(w)
+                        ref_word.append(ref)
                     if len(w) > 0:
                         # spaces_after.append(" ")
                         n_words += 1
-                new_word = tuple(new_word)
-                ref_word = tuple(ref_word)
-                fixed_words.append(new_word)
-                replacements.append(ref_word)
+                if len(new_word) > 0:
+                    new_word = tuple(new_word)
+                    ref_word = tuple(ref_word)
+                    fixed_words.append(new_word)
+                    replacements.append(ref_word)
                 # spaces_after = spaces_after[:-1]
                 #if n_words > 0:
                 #    spaces_after.extend([" "]*(n_words - 1))
             sp_after = mt_spaces.get(i + 1, '')
-            spaces_after.append(sp_after)
+            if n_words > 0 or isinstance(replacement_word, str):
+                spaces_after.append(sp_after)
         fixed_words = tuple(fixed_words)
         spaces_dict[fixed_words] = spaces_after
         all_splits[fixed_words].add(tuple(replacements))
