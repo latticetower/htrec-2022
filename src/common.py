@@ -5,6 +5,7 @@ from collections import deque
 import numpy as np
 import re
 word_regex = re.compile("\W+")
+word_regex2 = re.compile("(\W+)")
 
 UP = 1 # "\u2191"  # 1
 LEFT = 2 # "\u2190"  # 2
@@ -15,6 +16,8 @@ backtrace_symbols = {
     LEFT: "\u2190",
     DIAG: "\u2196"
 }
+
+
 
 
 def _remove_cap(char):
@@ -136,3 +139,36 @@ def separate_sequences(structure):
                     new_prefixes.append(p + [item])
         prefixes = new_prefixes
     return prefixes
+
+
+def correct_sigmas_in_word(word):
+    if word_regex.match(word):
+        return word
+    #"ς"
+    cw = []
+    if len(word) < 1:
+        return word
+    for c in word[:-1]:
+        name = unicodedata.name(c)
+        new_char = c
+        if name.find("FINAL SIGMA") >= 0:
+            name = name.replace("FINAL ", "")
+            try:
+                new_char = unicodedata.lookup(name)
+            except:
+                new_char = c
+        cw.append(new_char)
+    c = word[-1]
+    name = unicodedata.name(c)
+    if name.find("SIGMA") >= 0 and name.find("FINAL SIGMA") < 0:
+        name = name.replace("SIGMA", "FINAL SIGMA")
+        try:
+            new_char = unicodedata.lookup(name)
+        except:
+            new_char = c
+    cw.append(c)
+    return "".join(cw)
+
+def postprocess_sigmas(sentence):
+    words = [correct_sigmas_in_word(x) for x in word_regex2.split(sentence)]
+    return "".join(words)

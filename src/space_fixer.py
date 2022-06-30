@@ -12,6 +12,12 @@ def get_closest_data(mt_word, vocabs, vocabs_used=None):
     min_distance = np.inf
     if vocabs_used is None:
         vocabs_used = list(vocabs)
+    # for word, tree_dist in vocabs[1].find_closest(mt_word.sequence):
+    #     if tree_dist != 0:
+    #         continue
+    #     result = mt_word.distance_to(word)
+    #     if result.distance == 0:
+    #         return 0, [(result, k, word)]
     for k in vocabs_used:
         # print("vocab", k, mt_word)
         for word, dist in vocabs[k].find_nearby(mt_word.sequence, max_rad=10, verbose=False):
@@ -26,7 +32,7 @@ def get_closest_data(mt_word, vocabs, vocabs_used=None):
                 closest_data.append((result, k, word))
         if k == 1:
             # print(mt_words[2])
-            for word, dist in vocabs[k].find_closest(mt_word.sequence):
+            for word, tree_dist in vocabs[k].find_closest(mt_word.sequence):
                 result = mt_word.distance_to(word)
                 # if result.distance < min_distance:
                 #     min_distance = result.distance
@@ -93,26 +99,26 @@ def build_split_matrix(mt_words, vocabs, max_split_size=1, verbose=False, cutoff
     vocabs_used = [i for i in vocabs if i > 1]
 
     # ht_words, mt_words, mt_word.sequence
-    for i in range(N):
+    # for i in range(N):
+    #    if verbose:
+    #        print(i, "last word")
+    #    # candidates = []
+    for i, word in enumerate(mt_words):
+        mt_word = Word(word)
+        
+        dist, closest_data = get_closest_data(mt_word, vocabs, vocabs_used=vocabs_used)
+        if equal_length:
+            closest_data = [(ar, k, w) for ar, k, w in closest_data if len(w) == len(mt_word)]
+        if len(word) >= cutoff * 3:
+            closest_data = [(ar, k, w) for ar, k, w in closest_data if ar.distance <= cutoff]
+        else:
+            closest_data = [(ar, k, w) for ar, k, w in closest_data if ar.distance <= 0]
         if verbose:
-            print(i, "last word")
-        # candidates = []
-        for i, word in enumerate(mt_words):
-            mt_word = Word(word)
-            
-            dist, closest_data = get_closest_data(mt_word, vocabs, vocabs_used=vocabs_used)
-            if equal_length:
-                closest_data = [(ar, k, w) for ar, k, w in closest_data if len(w) == len(mt_word)]
-            if len(word) >= cutoff * 3:
-                closest_data = [(ar, k, w) for ar, k, w in closest_data if ar.distance <= cutoff]
-            else:
-                closest_data = [(ar, k, w) for ar, k, w in closest_data if ar.distance <= 0]
-            if verbose:
-                print(dist, closest_data)
-            if dist <= np.inf:
-                # callable(obj)
-                if len(closest_data) > 0:
-                    dmatrix[i] = closest_data
+            print(dist, closest_data)
+        if dist <= np.inf:
+            # callable(obj)
+            if len(closest_data) > 0:
+                dmatrix[i] = closest_data
         # for nwords in range(1, max_split_size + 1):
         #    b = e - nwords
         #    if b < 0:
