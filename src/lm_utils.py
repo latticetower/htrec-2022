@@ -2,7 +2,7 @@
 # from lm.markov.models import LM
 from lm.markov.models import LM
 
-def lm_score(text, replacements, lm=None, return_corrected=False):
+def lm_score(text, replacements, lm=None, return_index=False, return_corrected=False):
     texts = [text]
     scores = [lm.cross_entropy(text)]
     for the_candidate in replacements:
@@ -11,6 +11,8 @@ def lm_score(text, replacements, lm=None, return_corrected=False):
     best_index = scores.index(min(scores))
     if return_corrected:
         return texts[best_index], best_index > 0
+    if return_index:
+        return texts[best_index], best_index
     return texts[best_index]
     
 
