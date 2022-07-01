@@ -158,17 +158,77 @@ def correct_sigmas_in_word(word):
             except:
                 new_char = c
         cw.append(new_char)
-    c = word[-1]
-    name = unicodedata.name(c)
+    last_char = word[-1]
+    name = unicodedata.name(last_char)
     if name.find("SIGMA") >= 0 and name.find("FINAL SIGMA") < 0:
         name = name.replace("SIGMA", "FINAL SIGMA")
         try:
             new_char = unicodedata.lookup(name)
         except:
-            new_char = c
-    cw.append(c)
+            new_char = last_char
+    else:
+        new_char = last_char
+    cw.append(new_char)
     return "".join(cw)
 
 def postprocess_sigmas(sentence):
     words = [correct_sigmas_in_word(x) for x in word_regex2.split(sentence)]
     return "".join(words)
+
+and_regex = re.compile("\s+AND\s+")
+def split_accents(ch):
+    name = unicodedata.name(ch)
+    i = name.find("WITH")
+    if i < 0:
+        return ch, []
+    ch1 = remove_cap(ch)
+    accents = and_regex.split(name[i + 5:])
+    return ch1, accents
+    
+
+def append_accents(ch, accents):
+    # ch1 = remove_cap(ch)
+    name = unicodedata.name(ch)
+    i = name.find("WITH")
+    accents2 = []
+    prefix = name
+    if i >= 0:
+        prefix = name[:i]
+    accents2 = and_regex.split(name[i+5:])
+    for a in accents:
+        if not a in set(accents2):
+            accents2.append(a)
+    accents2 = " AND ".join(accents2)
+    if len(accents2) > 0:
+        name = prefix + " WITH " + accents2
+    try:
+        new_char = unicodedata.lookup(name)
+    except:
+        new_char = ch
+    return new_char
+
+def fix_accent_diphthong(text):
+    if len(text) < 1:
+        return text
+    vowels = [is_vowel(ch) for ch in text]
+    chars = []
+    skip = -1
+    for i, ch in enumerate(text):
+        if i == skip:
+            continue
+        if vowels[i]:
+            if i == len(text) - 1:
+                chars.append(ch)
+                continue
+            if vowels[i + 1] and text[i + 1] in ["ι", "υ"]:
+                # in diphthong -> fix accents if there are any
+                ch1, accents = split_accents(ch)
+                chars.append(ch1)
+                ch2 = append_accents(text[i + 1], accents)
+                chars.append(ch2)
+                skip = i + 1
+            else:
+                chars.append(ch)
+        else:
+            chars.append(ch)
+    return "".join(chars)

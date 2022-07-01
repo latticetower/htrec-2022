@@ -12,12 +12,12 @@ def get_closest_data(mt_word, vocabs, vocabs_used=None):
     min_distance = np.inf
     if vocabs_used is None:
         vocabs_used = list(vocabs)
-    for word, tree_dist in vocabs[1].find_closest(mt_word.sequence):
-        if tree_dist != 0:
-            continue
-        result = mt_word.distance_to(word)
-        if result.distance == 0:
-            return 0, [(result, 1, word)]
+    # for word, tree_dist in vocabs[1].find_closest(mt_word.sequence):
+    #     if tree_dist != 0:
+    #         continue
+    #     result = mt_word.distance_to(word)
+    #     if result.distance == 0:
+    #         return 0, [(result, 1, word)]
     for k in vocabs_used:
         # print("vocab", k, mt_word)
         for word, dist in vocabs[k].find_nearby(mt_word.sequence, max_rad=10, verbose=False):

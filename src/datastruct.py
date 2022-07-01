@@ -245,7 +245,7 @@ class AdvancedVocab:
     def bow2vector(self, bow):
         return bow2vector(bow, self.letter2index, self.n_letters)
 
-    def find(self, word_seq, verbose=False):
+    def find(self, word_seq, strict_compare=False, verbose=False):
         word = Word(word_seq)
         if verbose:
             print("input seq:", word)
@@ -261,7 +261,10 @@ class AdvancedVocab:
         for word_index in self.index2seq[index]:
             if verbose:
                 print("word_index=", word_index)
-            if self.words[word_index] == word:
+            if strict_compare:
+                if self.words[word_index] == word:
+                    indices.append(word_index)
+            else:
                 indices.append(word_index)
         return indices
 
