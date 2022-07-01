@@ -291,7 +291,9 @@ class AdvancedVocab:
             print(indices, distances)
         # all_results = []
         for ind, dist in zip(indices, distances):
-            result = [(self.words[word_index], d) for i, d in zip(ind, dist) for word_index in self.index2seq[i]]
+            result = [self.words[word_index] for i in ind for word_index in self.index2seq[i]]
+            result = [(w, word.distance_to(w).distance) for w in result]
+            # result = [(self.words[word_index], d) for i, d in zip(ind, dist) for word_index in self.index2seq[i]]
             # print([(str(w), d)for w, d in result])
             # all_results.append(result)
             return result
@@ -307,7 +309,8 @@ class AdvancedVocab:
         # print(indices, distances)
         rad = np.min(distances)
         if distance_only:
-            return rad
+            distance = np.min([word.distance_to(self.words[word_index]).distance for word_index in indices])
+            return distance
         # print("find closest", query_str, rad, word)
         return self.find_nearby(
             query_str,
