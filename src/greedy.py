@@ -77,7 +77,7 @@ def fix_spaces(seq, fixer, max_words=4, verbose=False):
                 ("".join(word), "".join([x.char for x in ref]))
                 for word, ref in align_spaces(mt, rt)
             ])
-            if np.all([len(w) > 1 for w, r in corrected_words]):
+            if np.mean([len(w) > 2 for w, r in corrected_words]) > 0.5:
                 if k > 0 and verbose:
                     print(mt_word, ref_word)
                 seq_fragment = [(tuple([w for w, r in corrected_words]), space)]
@@ -90,7 +90,7 @@ def fix_spaces(seq, fixer, max_words=4, verbose=False):
         i += 1
     return new_seq
 
-def greedy_correction_one(raw_seq, fixer):
+def greedy_correction_one(raw_seq, fixer, max_words=4):
     # print(seq)
     if isinstance(raw_seq, str):
         seq = word_regex2.split(raw_seq)
@@ -107,15 +107,15 @@ def greedy_correction_one(raw_seq, fixer):
             # print("fragment", fragment)
             new_fragments += fragment
         else:
-            fixed_fragment = fix_spaces(fragment, fixer)
+            fixed_fragment = fix_spaces(fragment, fixer, max_words=max_words)
             new_fragments+= fixed_fragment
     # fragments = [join_if_tuple(w) + s for w, s in new_fragments]
     # text = "".join(fragments)
     return new_fragments
 
-def greedy_correction(texts, fixer):
+def greedy_correction(texts, fixer, max_words=4):
     for raw_seq in tqdm(texts):
-        yield greedy_correction_one(raw_seq, fixer)
+        yield greedy_correction_one(raw_seq, fixer, max_words=max_words)
 
 
 # next(greedy_correction(mt_sequences_train))

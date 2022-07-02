@@ -232,3 +232,53 @@ def fix_accent_diphthong(text):
         else:
             chars.append(ch)
     return "".join(chars)
+
+def fix_accents(text):
+    from datastruct import Word, remove_cap
+    words = word_regex2.split(text)
+    corrected = []
+    cases = {
+        "τόν": "όν",
+        "τοῦ": "οῦ",
+        "τήν": "ᾱ́ν",
+        "τῆς": "ᾶς",
+        "τοῦ": "οῦ",
+        #"τοῖν": "",
+        "τούς": "ούς",
+        "τῶν": "ῶν",
+        "τοῖς": "οῖς",
+        "ταῖς": "αῖς", 
+    }
+    cases = {remove_cap(k): (k, remove_cap(v), v) for k, v in cases.items()}
+
+    for i, w in enumerate(words):
+        # print(words)
+        if len(w) == 0:
+            corrected.append(w)
+            continue
+        if word_regex.match(w):
+            corrected.append(w)
+        else:
+            word = Word(w)
+            if word.no_caps == remove_cap("καὶ"):
+                corrected.append("καὶ")
+                continue
+            if word.no_caps == remove_cap("ἐις"):
+                corrected.append("ἐις")
+                continue
+            # if is_vowel(w[0]):
+            #     pass
+            case_info = cases.get(word.no_caps, None)
+            if case_info is None or i >= len(words) - 2:
+                corrected.append(w)
+                continue
+            the, ending_no_caps, ending = case_info
+            if remove_cap(words[i + 2]).endswith(ending_no_caps):
+                # print(the, ending_no_caps)
+                corrected.append(the)
+            else:
+                corrected.append(w)
+    return "".join(corrected)
+            
+
+            

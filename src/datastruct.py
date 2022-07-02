@@ -133,10 +133,13 @@ class BasicVocab:
 
 class Word:
     def __init__(self, sequence):
+        if isinstance(sequence, str):
+            sequence = tuple(sequence)
         self.sequence = sequence  # sequence of words (word1, word2, word3)
         self.seq_no_caps = [remove_cap(w).lower() for w in sequence]
         self.no_caps = "".join(self.seq_no_caps)
         self.no_caps = self.no_caps.replace("ς", "σ")
+        self._bow = Counter(self.no_caps)
 
     def distance_to(self, other):
         # isinstance(seq)
@@ -165,7 +168,7 @@ class Word:
 
     @property
     def bow(self):
-        return Counter(self.no_caps)
+        return self._bow
     
     @property
     def tokens_no_caps(self):
